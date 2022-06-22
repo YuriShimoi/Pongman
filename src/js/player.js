@@ -1,21 +1,23 @@
 class Player extends Figure {
-    velocity = 1.5;
+    velocity = 1;
     direction = { 'x': 0, 'y': 0 };
     frame_direction = 1;
     _register_shield = true;
     _canMove = true;
+    frame_counter = 0;
+    frame_cooldown = 20;
     endGame = () => {};
 
     constructor() {
-        super("src/img/player.png", 64, 64);
+        super("src/img/player2.png", 32, 32);
         this.tags.push("player");
 
         this.setCollisionBox([
-            [32, 9], [52, 20], [52, 44],
-            [32, 55], [12, 44], [12, 20]
+            [16, 6], [25, 10], [25, 22],
+            [16, 26], [7, 22], [7, 10]
         ]);
 
-        this.shield = new Shield();
+        // this.shield = new Shield();
     }
 
     receiveMessage(message) {
@@ -31,24 +33,26 @@ class Player extends Figure {
     update() {
         if(this._canMove) {
             this.move();
-            if(this._register_shield) {
-                this._register_shield = false;
-                this.requestRegister(this.shield);
-            }
+            // if(this._register_shield) {
+            //     this._register_shield = false;
+            //     this.requestRegister(this.shield);
+            // }
         }
     }
 
     move() {
-        if(KeyControl.isPressed('w') || KeyControl.isPressed('s')) {
-            if(KeyControl.isPressed('w')) this.direction.y = -1;
-            if(KeyControl.isPressed('s')) this.direction.y =  1;
+        if(KeyControl.isPressed('w') || KeyControl.isPressed('s')
+        || KeyControl.isPressed('up') || KeyControl.isPressed('down')) {
+            if(KeyControl.isPressed('w') || KeyControl.isPressed('up')) this.direction.y = -1;
+            if(KeyControl.isPressed('s') || KeyControl.isPressed('down')) this.direction.y =  1;
         }
         else {
             this.direction.y = 0;
         }
-        if(KeyControl.isPressed('a') || KeyControl.isPressed('d')) {
-            if(KeyControl.isPressed('a')) this.direction.x = -1;
-            if(KeyControl.isPressed('d')) this.direction.x =  1;
+        if(KeyControl.isPressed('a') || KeyControl.isPressed('d')
+        || KeyControl.isPressed('left') || KeyControl.isPressed('right')) {
+            if(KeyControl.isPressed('a') || KeyControl.isPressed('left')) this.direction.x = -1;
+            if(KeyControl.isPressed('d') || KeyControl.isPressed('right')) this.direction.x =  1;
         }
         else {
             this.direction.x = 0;
@@ -57,15 +61,19 @@ class Player extends Figure {
         if((this.direction.x != 0 || this.direction.y != 0)
          && this.tryMove(this.direction.x * this.velocity, this.direction.y * this.velocity, ['wall'])) {
             let pos = this.getPosition();
-            this.shield.move(pos.x, pos.y);
+            // this.shield.move(pos.x, pos.y);
             this.nextFrame();
+        }
+        else {
+            this.frame_counter = 0;
+            this.updateAnimationFrame();
         }
     }
 
     nextFrame() {
         this.checkDirection();
         this.updateAnimationFrame();
-        this.shield.setDirection(this.frame_direction);
+        // this.shield.setDirection(this.frame_direction);
     }
 
     checkDirection() {
@@ -82,8 +90,14 @@ class Player extends Figure {
     }
 
     updateAnimationFrame() {
+        this.frame_counter++;
+        if(this.frame_counter >= 3 * this.frame_cooldown) {
+            this.frame_counter = 0;
+        }
+
         let newDir = this.frame_direction * this.getSize().height;
-        this.getTexture().setFrame(0, newDir);
+        let size = this.getSize();
+        this.getTexture().setFrame(parseInt(this.frame_counter / this.frame_cooldown) * size.width, newDir);
     }
 }
 
